@@ -1,5 +1,4 @@
 import os
-import json
 import requests
 from pathlib import Path
 
@@ -20,13 +19,15 @@ def generate_video(script: str, output_dir: Path, presenter_image_url: str = Non
 
     if did_key and presenter:
         return _generate_with_did(script, videos_dir, did_key, presenter)
-    else:
-        print("[video_generator] DID_API_KEY or presenter image not set — script saved for manual use")
-        return {"script_path": str(script_path), "video_path": None}
+
+    print("[video_generator] DID_API_KEY ou presenter não configurado — script salvo")
+    return {"script_path": str(script_path), "video_path": None}
 
 
 def _generate_with_did(script: str, output_dir: Path, api_key: str, presenter_url: str) -> dict:
-    """Submit talking-head video to D-ID API and download when ready."""
+    script_path = str(output_dir / "video_script.txt")
+
+    # D-ID aceita a key diretamente em Basic auth (já vem em base64 do dashboard)
     headers = {
         "Authorization": f"Basic {api_key}",
         "Content-Type": "application/json",
@@ -36,10 +37,13 @@ def _generate_with_did(script: str, output_dir: Path, api_key: str, presenter_ur
         "script": {
             "type": "text",
             "input": script,
-            "provider": {"type": "microsoft", "voice_id": "pt-BR-AntonioNeural"},
+            "provider": {
+                "type": "microsoft",
+                "voice_id": "pt-BR-AntonioNeural",
+            },
         },
         "source_url": presenter_url,
-        "config": {"fluent": True, "pad_audio": 0.0},
+        "config": {"fluent": True, "pad_audio": 0.5},
     }
 
     try:
@@ -49,32 +53,43 @@ def _generate_with_did(script: str, output_dir: Path, api_key: str, presenter_ur
             json=payload,
             timeout=30,
         )
-        resp.raise_for_status()
+
+        if not resp.ok:
+            print(f"[video_generator] D-ID error {resp.status_code}: {resp.text}")
+            return {"script_path": script_path, "video_path": None}
+
         talk_id = resp.json()["id"]
-        print(f"[video_generator] D-ID talk created: {talk_id}")
+        print(f"[video_generator] D-ID talk criado: {talk_id}")
 
         import time
-        for _ in range(30):
+        for attempt in range(30):
             time.sleep(5)
             status_resp = requests.get(
                 f"https://api.d-id.com/talks/{talk_id}",
                 headers=headers,
                 timeout=10,
             )
-            status_resp.raise_for_status()
+            if not status_resp.ok:
+                continue
+
             data = status_resp.json()
-            if data["status"] == "done":
+            status = data.get("status")
+
+            if status == "done":
                 video_url = data["result_url"]
                 video_resp = requests.get(video_url, timeout=60)
                 video_path = output_dir / "video.mp4"
                 video_path.write_bytes(video_resp.content)
-                print(f"[video_generator] Video saved: {video_path}")
-                return {"script_path": str(output_dir / "video_script.txt"), "video_path": str(video_path)}
-            elif data["status"] == "error":
-                print(f"[video_generator] D-ID error: {data}")
+                print(f"[video_generator] Vídeo salvo: {video_path}")
+                return {"script_path": script_path, "video_path": str(video_path)}
+
+            elif status == "error":
+                print(f"[video_generator] D-ID falhou: {data.get('error', data)}")
                 break
 
-    except Exception as e:
-        print(f"[video_generator] Error with D-ID API: {e}")
+            print(f"[video_generator] Aguardando D-ID... tentativa {attempt + 1}/30 (status: {status})")
 
-    return {"script_path": str(output_dir / "video_script.txt"), "video_path": None}
+    except Exception as e:
+        print(f"[video_generator] Exceção D-ID: {e}")
+
+    return {"script_path": script_path, "video_path": None}

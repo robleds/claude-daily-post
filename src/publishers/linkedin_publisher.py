@@ -1,12 +1,11 @@
 import os
-import json
 import requests
 from pathlib import Path
 from .base import BasePublisher
 
 
 class LinkedInPublisher(BasePublisher):
-    API_BASE = "https://api.linkedin.com/v2"
+    REST_BASE = "https://api.linkedin.com/rest"
 
     def __init__(self):
         super().__init__("linkedin")
@@ -16,72 +15,75 @@ class LinkedInPublisher(BasePublisher):
     def is_configured(self) -> bool:
         return bool(self.token and self.person_urn)
 
-    def publish(self, content: str, image_path: Path | None = None, video_path: Path | None = None) -> dict:
-        headers = {
+    def _headers(self) -> dict:
+        return {
             "Authorization": f"Bearer {self.token}",
             "Content-Type": "application/json",
+            "LinkedIn-Version": "202401",
             "X-Restli-Protocol-Version": "2.0.0",
         }
 
-        media = None
+    def publish(self, content: str, image_path: Path | None = None, video_path: Path | None = None) -> dict:
+        image_urn = None
         if image_path and image_path.exists():
-            media = self._upload_image(image_path, headers)
+            image_urn = self._upload_image(image_path)
 
         post_body = {
             "author": self.person_urn,
-            "lifecycleState": "PUBLISHED",
-            "specificContent": {
-                "com.linkedin.ugc.ShareContent": {
-                    "shareCommentary": {"text": content},
-                    "shareMediaCategory": "IMAGE" if media else "NONE",
-                    **({"media": [media]} if media else {}),
-                }
+            "commentary": content,
+            "visibility": "PUBLIC",
+            "distribution": {
+                "feedDistribution": "MAIN_FEED",
+                "targetEntities": [],
+                "thirdPartyDistributionChannels": [],
             },
-            "visibility": {"com.linkedin.ugc.MemberNetworkVisibility": "PUBLIC"},
+            "lifecycleState": "PUBLISHED",
+            "isReshareDisabledByAuthor": False,
         }
 
+        if image_urn:
+            post_body["content"] = {"media": {"id": image_urn}}
+
         resp = requests.post(
-            f"{self.API_BASE}/ugcPosts",
-            headers=headers,
+            f"{self.REST_BASE}/posts",
+            headers=self._headers(),
             json=post_body,
             timeout=30,
         )
-        resp.raise_for_status()
-        post_id = resp.headers.get("X-RestLi-Id", "unknown")
+
+        if not resp.ok:
+            raise RuntimeError(f"LinkedIn POST /rest/posts {resp.status_code}: {resp.text}")
+
+        post_id = resp.headers.get("x-restli-id", "unknown")
         return {"status": "published", "post_id": post_id}
 
-    def _upload_image(self, image_path: Path, headers: dict) -> dict | None:
-        """Register and upload image to LinkedIn."""
-        register_resp = requests.post(
-            f"{self.API_BASE}/assets?action=registerUpload",
-            headers=headers,
-            json={
-                "registerUploadRequest": {
-                    "recipes": ["urn:li:digitalmediaRecipe:feedshare-image"],
-                    "owner": self.person_urn,
-                    "serviceRelationships": [
-                        {"relationshipType": "OWNER", "identifier": "urn:li:userGeneratedContent"}
-                    ],
-                }
-            },
+    def _upload_image(self, image_path: Path) -> str | None:
+        """Upload image via new LinkedIn Images API, return image URN."""
+        init_resp = requests.post(
+            f"{self.REST_BASE}/images?action=initializeUpload",
+            headers=self._headers(),
+            json={"initializeUploadRequest": {"owner": self.person_urn}},
             timeout=30,
         )
-        register_resp.raise_for_status()
-        data = register_resp.json()
-        upload_url = data["value"]["uploadMechanism"]["com.linkedin.digitalmedia.uploading.MediaUploadHttpRequest"]["uploadUrl"]
-        asset_urn = data["value"]["asset"]
+        if not init_resp.ok:
+            print(f"[linkedin] Image upload init failed {init_resp.status_code}: {init_resp.text}")
+            return None
+
+        data = init_resp.json()["value"]
+        upload_url = data["uploadUrl"]
+        image_urn = data["image"]
 
         upload_resp = requests.put(
             upload_url,
             data=image_path.read_bytes(),
-            headers={"Content-Type": "image/png", "Authorization": f"Bearer {self.token}"},
+            headers={
+                "Authorization": f"Bearer {self.token}",
+                "Content-Type": "image/png",
+            },
             timeout=60,
         )
-        upload_resp.raise_for_status()
+        if not upload_resp.ok:
+            print(f"[linkedin] Image binary upload failed {upload_resp.status_code}")
+            return None
 
-        return {
-            "status": "READY_TO_POST",
-            "description": {"text": ""},
-            "media": asset_urn,
-            "title": {"text": ""},
-        }
+        return image_urn
