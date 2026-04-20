@@ -44,16 +44,32 @@ def generate_linkedin(context: str) -> str:
     prompt = f"""
 {context}
 
-Crie um post para LinkedIn com as seguintes características:
-- Máximo 1.500 caracteres
-- Primeiro parágrafo: gancho forte com um dado ou insight surpreendente (sem "Olá" ou saudação)
-- Desenvolva o raciocínio em 3-4 parágrafos curtos
-- Conecte com impacto prático: o que isso muda na segunda-feira?
-- Termine com uma pergunta que gere debate genuíno
-- No máximo 4 emojis, usados com propósito
-- 5 a 7 hashtags relevantes no final
-- Escreva na sua voz — como você falaria com um colega experiente
-- Em português brasileiro
+Escreva um post para LinkedIn na minha voz. Sigo abaixo com regras rígidas de estilo — leia com atenção antes de escrever.
+
+ESTRUTURA:
+- Linha 1: frase curta e direta que funciona como título (máximo 10 palavras). Sem ponto de interrogação. Deve parar o scroll.
+- Linha em branco
+- Desenvolvimento em 3 a 4 parágrafos curtos (2 a 4 linhas cada)
+- Pergunta final que provoque resposta genuína
+- Linha em branco
+- 5 a 7 hashtags
+
+REGRAS DE LINGUAGEM — OBRIGATÓRIAS:
+- NUNCA use travessão (—) no meio de frases. Se precisar de pausa, use ponto final e comece nova frase.
+- NUNCA use construções como "não só X, mas Y" ou "não apenas X, mas também Y"
+- NUNCA comece frases com "Isso", "Este", "Esta" como sujeito genérico
+- NUNCA use "crucial", "fundamental", "primordial", "no mundo atual", "cada vez mais"
+- Sem emojis
+- Frases curtas. Quando a frase ficar longa, quebre em duas.
+- Use vírgula para pausas naturais, nunca travessão
+- Escreva como se estivesse explicando para um colega no café, não em uma apresentação
+- Quando quiser contrastar ideias, use parágrafo novo em vez de conector com travessão
+- Pode usar reticências (...) com moderação para pausas de reflexão
+- Máximo 1.300 caracteres no total (sem as hashtags)
+
+Tom: direto, um pouco provocador, baseado em experiência real. Não motivacional.
+
+Em português brasileiro.
 
 Post:"""
     return _call_claude(prompt, max_tokens=800)
