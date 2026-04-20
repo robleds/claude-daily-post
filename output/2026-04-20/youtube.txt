@@ -1,0 +1,51 @@
+TÍTULO:
+Por que 80% das empresas estão perdendo dinheiro com IA (e como não ser uma delas)
+
+DESCRIÇÃO:
+Um estudo da PwC com 1.217 executivos revela que 74% do valor econômico da IA vai para apenas 20% das empresas. Nesse vídeo eu explico o que essas empresas fazem diferente — e o que você pode aplicar hoje. Transformação digital, estratégia de IA e produtividade empresarial com Rodrigo Robledo.
+
+TAGS:
+inteligência artificial, IA empresarial, transformação digital, produtividade com IA, ROI da IA, automação empresarial, estratégia de IA, PwC 2026, IA no Brasil, agentes de IA, governança de IA, n8n, Supabase, RAG, rodrigo robledo, doctorweb, GovTech, futuro do trabalho, IA e negócios, eficiência operacional
+
+---
+
+SCRIPT:
+
+(0:00 - 0:30) ABERTURA
+Você já parou pra pensar que talvez a sua empresa esteja implementando IA do jeito errado?
+
+Não é falta de tecnologia. Não é falta de budget. É uma questão de estratégia — e um estudo que saiu essa semana deixou isso muito claro.
+
+(0:30 - 1:30) O ESTUDO
+A PwC entrevistou 1.217 executivos sênior em 25 setores do mundo inteiro. E o resultado foi direto ao ponto: 74% de todo o valor econômico gerado pela IA está sendo capturado por apenas 20% das empresas.
+
+Vinte por cento. E as líderes geram 7,2 vezes mais ganhos do que a média.
+
+Isso é uma concentração enorme. E esse gap está aumentando, não diminuindo.
+
+(1:30 - 3:30) OS TRÊS INSIGHTS PRÁTICOS
+
+Insight número 1: A diferença é de pergunta, não de ferramenta.
+
+A maioria das empresas pergunta: "Como a IA pode fazer o que já fazemos mais barato?" As líderes perguntam: "O que a IA nos permite fazer que era impossível antes?" Essa mudança de pergunta muda completamente o tipo de projeto que você vai construir.
+
+Insight número 2: Governança não é burocracia — é vantagem competitiva.
+
+As empresas líderes têm 1,7 vez mais chance de ter um framework real de IA responsável. E os colaboradores delas confiam o dobro nos outputs da IA. Isso não é coincidência. Quando as pessoas confiam na IA, elas usam mais — e aí o ganho de produtividade é real.
+
+Insight número 3: Velocidade de decisão é o novo campo de batalha.
+
+As líderes automatizam decisões em 2,8 vezes mais velocidade que as concorrentes. No mundo de hoje, onde o mercado muda a cada trimestre, quem decide mais rápido com mais qualidade ganha.
+
+(3:30 - 4:30) CONCLUSÃO E CTA
+Então, o que você faz na segunda-feira?
+
+Primeiro: olha para os seus projetos de IA atuais e pergunta honestamente — eles estão criando nova receita ou só cortando custo?
+
+Segundo: avalia se a sua cultura de IA é real ou performática. Seus times confiam nos outputs da IA ou ficam verificando tudo manualmente por medo?
+
+Terceiro: mede. Você não melhora o que não mede. Define métricas de impacto de negócio, não só métricas técnicas.
+
+Esse estudo da PwC não é um alerta, é uma oportunidade. Os 80% que ainda não chegaram lá têm tudo pra chegar — com estratégia certa.
+
+Se esse vídeo foi útil, se inscreve aqui no canal. E me conta nos comentários: qual é o maior gargalo de IA na sua empresa hoje?

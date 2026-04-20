@@ -1,0 +1,17 @@
+[Unit]
+Description=Claude Daily Post — Rodrigo Robledo (@robleds)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/user/claude-daily-post
+ExecStart=/usr/bin/python3 /home/user/claude-daily-post/scheduler.py
+Restart=on-failure
+RestartSec=60
+EnvironmentFile=/home/user/claude-daily-post/.env
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,67 @@
+# Por que 80% das empresas vão perder a corrida da IA (e o que fazer antes que seja tarde)
+
+**Um estudo com 1.217 executivos revela o gap que está se abrindo — e não é o que você pensa**
+
+---
+
+A PwC publicou essa semana um dos estudos mais reveladores sobre IA empresarial dos últimos anos. Entrevistaram 1.217 executivos sênior em 25 setores do mundo inteiro. E chegaram a uma conclusão que deveria incomodar qualquer líder de tecnologia ou negócios: **74% de todo o valor econômico gerado pela IA está sendo capturado por apenas 20% das empresas.**
+
+Sete vírgula dois vezes mais ganhos. Quase três vezes mais velocidade de automação. Colaboradores com o dobro de confiança nos outputs da IA.
+
+Quando vi esses números, minha primeira reação foi: isso é uma profecia que se autocumpre. E a segunda foi: esse gap vai aumentar.
+
+## O problema não é tecnologia
+
+Vinte e cinco anos trabalhando com transformação digital me ensinaram uma coisa: quando a maioria das empresas fala que "está investindo em IA", o que elas estão fazendo na prática é implementar automações pontuais em processos que já existiam.
+
+Não tem nada de errado com isso. Eficiência operacional é necessária. Mas não é o que separa os 20% do restante.
+
+A diferença fundamental está na pergunta que cada empresa faz quando sente o cheiro de IA.
+
+A maioria pergunta: *"Como podemos usar IA para fazer o que já fazemos mais barato?"*
+
+Os líderes perguntam: *"O que a IA nos permite fazer que era impossível antes?"*
+
+Essa mudança de pergunta parece sutil. Na prática, ela muda completamente o tipo de iniciativa que você vai construir, o perfil de talento que você vai contratar, e o tipo de resultado que vai medir.
+
+## Governança não é burocracia — é vantagem competitiva
+
+Um dado do estudo que me surpreendeu positivamente: as empresas líderes têm 1,7x mais probabilidade de ter um framework real de IA responsável.
+
+Durante anos, ouvi de executivos que "governança de IA" era coisa de empresa grande, conservadora demais, avessa a risco. Que atrapalharia a velocidade de inovação.
+
+O estudo mostra o oposto. Empresas com governança real têm colaboradores que confiam **duas vezes mais** nos outputs da IA. E quando as pessoas confiam na IA, elas usam de verdade — não ficam verificando cada saída manualmente por medo de erro.
+
+Isso cria um loop virtuoso: mais uso → mais dados → melhor modelo → mais confiança → mais uso.
+
+Governança não desacelera a IA. Ela escala.
+
+## Velocidade de decisão: o novo campo de batalha
+
+O terceiro insight do estudo é o mais operacional: as empresas líderes automatizam decisões em **2,8x a velocidade** das concorrentes.
+
+No mundo de hoje, onde janelas de oportunidade se abrem e fecham em meses, não em anos, isso é uma vantagem enorme. Não é sobre ter a melhor IA — é sobre ter os processos organizacionais que permitem que a IA tome ou apoie decisões na velocidade certa.
+
+Trabalhei recentemente com uma operação de GovTech onde reduzimos o ciclo de aprovação de um processo de 45 dias para 6 — não porque a IA era "mais inteligente", mas porque redesenhamos o processo para que a IA pudesse agir em cada etapa sem esperar por uma fila humana.
+
+A IA estava disponível. O gargalo era o desenho do processo.
+
+## O que fazer na segunda-feira
+
+Três ações concretas, sem romantismo:
+
+**1. Audite seus projetos de IA com honestidade.** Para cada iniciativa em andamento: ela está criando nova receita ou apenas cortando custo? Quanto do seu portfólio de IA está no primeiro quadrante?
+
+**2. Meça confiança, não só acurácia.** Seu time usa os outputs da IA ou revisita tudo manualmente? Se revisam tudo, o problema não é técnico — é cultural. E cultura se muda com governança, não com retreinamento de modelo.
+
+**3. Redesenhe processos para a velocidade da IA.** Muita empresa tem IA boa presa em processos lentos. Antes de investir em mais tecnologia, pergunte: onde a IA poderia agir mais rápido se o processo deixasse?
+
+---
+
+O estudo da PwC não é um alerta para os 20% que já chegaram lá. É uma oportunidade para os 80% que ainda estão a tempo de mudar a rota.
+
+A pergunta não é se a IA vai transformar o seu setor. Já está transformando. A pergunta é se você vai estar no grupo que captura esse valor — ou no grupo que vai olhar para trás e perguntar onde errou.
+
+---
+
+*Rodrigo Robledo é fundador da DoctorWeb e consultor GovTech na EloGroup. Escreve sobre transformação digital, arquitetura de dados e IA aplicada a negócios.*
