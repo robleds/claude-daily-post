@@ -8,6 +8,9 @@ Fluxo diário (06:30):
 3. Gera imagens (fal.ai) e vídeo (D-ID) se configurado
 4. Publica em LinkedIn, Instagram, TikTok, YouTube e Medium
 5. Salva tudo em output/YYYY-MM-DD/
+
+Retomada inteligente: se output/YYYY-MM-DD/ já existe com conteúdo gerado,
+pula geração e vai direto para publicação (evita regerar e gastar créditos).
 """
 
 import os
@@ -41,62 +44,136 @@ logging.basicConfig(
 )
 log = logging.getLogger("daily-post")
 
+PLATFORMS = ["linkedin", "instagram", "tiktok", "youtube", "medium"]
 
-def run(seed_article: dict | None = None):
+
+def _load_existing_content(output_dir: Path) -> dict | None:
+    """Load already-generated content from disk if it exists."""
+    content = {}
+    for platform in PLATFORMS:
+        f = output_dir / f"{platform}.txt"
+        if not f.exists():
+            return None
+        content[platform] = f.read_text(encoding="utf-8")
+
+    script_file = output_dir / "videos" / "video_script.txt"
+    content["video_script"] = script_file.read_text(encoding="utf-8") if script_file.exists() else ""
+
+    concepts_file = output_dir / "image_results.json"
+    content["image_concept"] = {}
+    if concepts_file.exists():
+        try:
+            results = json.loads(concepts_file.read_text(encoding="utf-8"))
+            content["image_concept"] = {k: v.get("prompt", "") for k, v in results.items()}
+        except Exception:
+            pass
+
+    return content
+
+
+def _load_existing_article(output_dir: Path) -> dict | None:
+    f = output_dir / "source_article.json"
+    if not f.exists():
+        return None
+    try:
+        return json.loads(f.read_text(encoding="utf-8"))
+    except Exception:
+        return None
+
+
+def _load_previous_publish_results(output_dir: Path) -> dict:
+    f = output_dir / "publish_results.json"
+    if not f.exists():
+        return {}
+    try:
+        return json.loads(f.read_text(encoding="utf-8"))
+    except Exception:
+        return {}
+
+
+def _platforms_needing_publish(previous: dict) -> list[str]:
+    """Return platforms that haven't been successfully published yet."""
+    pending = []
+    for platform in PLATFORMS:
+        result = previous.get(platform, {})
+        if result.get("status") != "published":
+            pending.append(platform)
+    return pending
+
+
+def run(seed_article: dict | None = None, force_regenerate: bool = False):
     today = datetime.now().strftime("%Y-%m-%d")
     output_dir = OUTPUT_DIR / today
     output_dir.mkdir(parents=True, exist_ok=True)
     log.info(f"=== claude-daily-post starting — {today} ===")
 
-    # 1. Find article
-    if seed_article:
-        article = seed_article
-        log.info(f"Using seed article: {article['title']}")
+    # --- RETOMADA INTELIGENTE ---
+    existing_content = None if force_regenerate else _load_existing_content(output_dir)
+    existing_article = None if force_regenerate else _load_existing_article(output_dir)
+
+    if existing_content and existing_article:
+        log.info("Conteúdo já gerado hoje — pulando geração, indo direto para publicação")
+        content = existing_content
+        article = existing_article
     else:
-        log.info("Fetching recent AI news...")
-        articles = fetch_recent_ai_news(max_age_days=7)
-        log.info(f"Found {len(articles)} relevant articles")
-        fresh = filter_not_in_portuguese(articles)
-        log.info(f"Not yet in Portuguese: {len(fresh)} articles")
-        article = pick_best_article(fresh)
-        if not article:
-            log.warning("No fresh article found — using most recent regardless of PT coverage")
-            article = pick_best_article(articles)
-        if not article:
-            log.error("No articles found at all. Aborting.")
-            return
+        # 1. Encontrar artigo
+        if seed_article:
+            article = seed_article
+            log.info(f"Usando seed article: {article['title']}")
+        else:
+            log.info("Buscando notícias recentes de IA...")
+            articles = fetch_recent_ai_news(max_age_days=7)
+            log.info(f"Encontrados {len(articles)} artigos relevantes")
+            fresh = filter_not_in_portuguese(articles)
+            log.info(f"Ainda não em português: {len(fresh)} artigos")
+            article = pick_best_article(fresh) or pick_best_article(articles)
+            if not article:
+                log.error("Nenhum artigo encontrado. Abortando.")
+                return
 
-    # 2. Fetch full content
-    if article.get("url") and not article.get("full_content"):
-        log.info(f"Fetching full content from: {article['url']}")
-        article["full_content"] = fetch_full_content(article["url"])
+        # 2. Buscar conteúdo completo
+        if article.get("url") and not article.get("full_content"):
+            log.info(f"Buscando conteúdo completo de: {article['url']}")
+            article["full_content"] = fetch_full_content(article["url"])
 
-    (output_dir / "source_article.json").write_text(
-        json.dumps(article, ensure_ascii=False, indent=2), encoding="utf-8"
-    )
+        (output_dir / "source_article.json").write_text(
+            json.dumps(article, ensure_ascii=False, indent=2), encoding="utf-8"
+        )
 
-    # 3. Generate content
-    log.info("Generating platform-specific content via Claude...")
-    content = generate_all_content(article)
+        # 3. Gerar conteúdo via Claude
+        log.info("Gerando conteúdo por plataforma via Claude...")
+        content = generate_all_content(article)
 
-    for platform in ["linkedin", "instagram", "tiktok", "youtube", "medium"]:
-        (output_dir / f"{platform}.txt").write_text(content[platform], encoding="utf-8")
-        log.info(f"[{platform}] Content saved")
+        for platform in PLATFORMS:
+            (output_dir / f"{platform}.txt").write_text(content[platform], encoding="utf-8")
+            log.info(f"[{platform}] Conteúdo salvo")
 
-    (output_dir / "video_script.txt").write_text(content["video_script"], encoding="utf-8")
+        (output_dir / "videos").mkdir(exist_ok=True)
+        (output_dir / "videos" / "video_script.txt").write_text(content["video_script"], encoding="utf-8")
 
-    # 4. Generate images
-    log.info("Generating images...")
-    image_results = generate_images(content["image_concept"], output_dir)
-    (output_dir / "image_results.json").write_text(
-        json.dumps(image_results, ensure_ascii=False, indent=2), encoding="utf-8"
-    )
+        # 4. Gerar imagens
+        log.info("Gerando imagens...")
+        image_results = generate_images(content["image_concept"], output_dir)
+        (output_dir / "image_results.json").write_text(
+            json.dumps(image_results, ensure_ascii=False, indent=2), encoding="utf-8"
+        )
 
-    # 5. Generate video
-    log.info("Generating video...")
-    video_result = generate_video(content["video_script"], output_dir)
+        # 5. Gerar vídeo
+        log.info("Gerando vídeo...")
+        generate_video(content["video_script"], output_dir)
 
-    # 6. Publish to platforms
+    # --- PUBLICAÇÃO ---
+    previous_results = _load_previous_publish_results(output_dir)
+    pending_platforms = _platforms_needing_publish(previous_results)
+
+    if not pending_platforms:
+        log.info("Todas as plataformas já foram publicadas hoje!")
+        _print_summary(today, output_dir, article, previous_results)
+        return
+
+    log.info(f"Publicando em: {', '.join(pending_platforms)}")
+
+    video_path = _find_video(output_dir)
     publishers = {
         "linkedin":  LinkedInPublisher(),
         "instagram": InstagramPublisher(),
@@ -105,53 +182,56 @@ def run(seed_article: dict | None = None):
         "medium":    MediumPublisher(),
     }
 
-    publish_results = {}
-    for platform, publisher in publishers.items():
-        log.info(f"Publishing to {platform}...")
+    publish_results = dict(previous_results)
+    for platform in pending_platforms:
+        log.info(f"Publicando em {platform}...")
         image_path = _find_image(output_dir, platform)
-        video_path = Path(video_result["video_path"]) if video_result.get("video_path") else None
-        result = publisher.safe_publish(content[platform], image_path, video_path)
+        result = publishers[platform].safe_publish(content[platform], image_path, video_path)
         publish_results[platform] = result
 
     (output_dir / "publish_results.json").write_text(
         json.dumps(publish_results, ensure_ascii=False, indent=2), encoding="utf-8"
     )
 
-    log.info("=== Daily post complete ===")
+    log.info("=== Daily post completo ===")
     _print_summary(today, output_dir, article, publish_results)
 
 
 def _find_image(output_dir: Path, platform: str) -> Path | None:
     img_map = {
-        "linkedin": "linkedin.png",
+        "linkedin":  "linkedin.png",
         "instagram": "instagram.png",
-        "tiktok": "tiktok.png",
-        "youtube": "youtube_thumbnail.png",
-        "medium": "medium.png",
+        "tiktok":    "tiktok.png",
+        "youtube":   "youtube_thumbnail.png",
+        "medium":    "medium.png",
     }
-    if platform in img_map:
-        path = output_dir / "images" / img_map[platform]
-        return path if path.exists() else None
-    return None
+    path = output_dir / "images" / img_map.get(platform, "")
+    return path if path.exists() else None
+
+
+def _find_video(output_dir: Path) -> Path | None:
+    path = output_dir / "videos" / "video.mp4"
+    return path if path.exists() else None
 
 
 def _print_summary(today: str, output_dir: Path, article: dict, results: dict):
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print(f"  RESUMO DO DIA — {today}")
-    print("="*60)
+    print("=" * 60)
     print(f"  Notícia: {article['title'][:70]}")
     print(f"  Fonte:   {article.get('source', 'N/A')}")
     print(f"  Output:  {output_dir}")
     print()
-    for platform, result in results.items():
-        status = result.get("status", "unknown")
+    for platform in PLATFORMS:
+        result = results.get(platform, {})
+        status = result.get("status", "pending")
         icon = "✓" if status == "published" else "○" if status == "skipped" else "✗"
         detail = result.get("url") or result.get("post_id") or result.get("reason", "")
         print(f"  {icon} {platform:<12} {status}  {detail}")
-    print("="*60 + "\n")
+    print("=" * 60 + "\n")
 
 
-# Seed article for first run (PwC 2026 AI Performance Study)
+# Seed article — PwC 2026 AI Performance Study
 SEED_ARTICLE = {
     "title": "Three-quarters of AI's economic gains are being captured by just 20% of companies",
     "url": "https://www.pwc.com/gx/en/news-room/press-releases/2026/pwc-2026-ai-performance-study.html",
@@ -175,14 +255,13 @@ if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser(description="claude-daily-post")
-    parser.add_argument("--seed", action="store_true", help="Use today's seed article (PwC study)")
-    parser.add_argument("--dry-run", action="store_true", help="Generate content but don't publish")
+    parser.add_argument("--seed", action="store_true", help="Usar seed article do dia (PwC study)")
+    parser.add_argument("--dry-run", action="store_true", help="Gerar conteúdo sem publicar")
+    parser.add_argument("--force", action="store_true", help="Forçar regeneração mesmo se conteúdo já existe")
     args = parser.parse_args()
 
     if args.dry_run:
-        os.environ.setdefault("LINKEDIN_ACCESS_TOKEN", "")
-        os.environ.setdefault("INSTAGRAM_ACCESS_TOKEN", "")
-        os.environ.setdefault("TIKTOK_ACCESS_TOKEN", "")
-        os.environ.setdefault("MEDIUM_INTEGRATION_TOKEN", "")
+        for key in ["LINKEDIN_ACCESS_TOKEN", "INSTAGRAM_ACCESS_TOKEN", "TIKTOK_ACCESS_TOKEN", "MEDIUM_INTEGRATION_TOKEN"]:
+            os.environ.setdefault(key, "")
 
-    run(seed_article=SEED_ARTICLE if args.seed else None)
+    run(seed_article=SEED_ARTICLE if args.seed else None, force_regenerate=args.force)
