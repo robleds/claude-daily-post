@@ -19,7 +19,7 @@ class LinkedInPublisher(BasePublisher):
         return {
             "Authorization": f"Bearer {self.token}",
             "Content-Type": "application/json",
-            "LinkedIn-Version": "20251001",
+            "LinkedIn-Version": "202601",
             "X-Restli-Protocol-Version": "2.0.0",
         }
 
