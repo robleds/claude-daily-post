@@ -21,10 +21,37 @@ from datetime import datetime
 from pathlib import Path
 from dotenv import load_dotenv
 
-load_dotenv()
-
 BASE_DIR = Path(__file__).parent
 sys.path.insert(0, str(BASE_DIR / "src"))
+
+# Carrega .env do diretório do script (funciona independente do cwd do agendador)
+_env_file = BASE_DIR / ".env"
+load_dotenv(dotenv_path=_env_file)
+
+# Configura logging para arquivo + console desde o início
+_log_dir = BASE_DIR / "logs"
+_log_dir.mkdir(exist_ok=True)
+_today_log = _log_dir / f"{datetime.now().strftime('%Y-%m-%d')}.log"
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+    handlers=[
+        logging.FileHandler(_today_log, encoding="utf-8"),
+        logging.StreamHandler(sys.stdout),
+    ],
+)
+log = logging.getLogger("daily-post")
+
+# Valida credencial obrigatória antes de qualquer importação pesada
+if not os.environ.get("ANTHROPIC_API_KEY"):
+    log.error("=" * 60)
+    log.error("ERRO CRÍTICO: ANTHROPIC_API_KEY não configurada!")
+    log.error(f"Arquivo .env esperado em: {_env_file}")
+    log.error("Crie o arquivo .env copiando .env.example e preenchendo as chaves.")
+    log.error("=" * 60)
+    sys.exit(1)
 
 from config import OUTPUT_DIR
 from src.news_fetcher import fetch_recent_ai_news, filter_not_in_portuguese, pick_best_article, fetch_full_content
@@ -36,13 +63,6 @@ from src.publishers.instagram_publisher import InstagramPublisher
 from src.publishers.tiktok_publisher import TikTokPublisher
 from src.publishers.youtube_publisher import YouTubePublisher
 from src.publishers.medium_publisher import MediumPublisher
-
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S",
-)
-log = logging.getLogger("daily-post")
 
 PLATFORMS = ["linkedin", "instagram", "tiktok", "youtube", "medium"]
 

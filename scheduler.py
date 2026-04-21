@@ -13,14 +13,22 @@ import logging
 from datetime import datetime, timedelta
 from pathlib import Path
 
+BASE_DIR = Path(__file__).parent
+LOG_DIR = BASE_DIR / "logs"
+LOG_DIR.mkdir(exist_ok=True)
+LOG_FILE = LOG_DIR / "scheduler.log"
+
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [scheduler] %(message)s",
     datefmt="%Y-%m-%d %H:%M:%S",
+    handlers=[
+        logging.FileHandler(LOG_FILE, encoding="utf-8"),
+        logging.StreamHandler(sys.stdout),
+    ],
 )
 log = logging.getLogger("scheduler")
 
-BASE_DIR = Path(__file__).parent
 PYTHON = sys.executable
 MAIN = str(BASE_DIR / "main.py")
 TARGET_HOUR = 6
@@ -36,21 +44,34 @@ def _next_run_time() -> float:
 
 
 def _run_post():
-    log.info("=== Running daily post ===")
-    result = subprocess.run([PYTHON, MAIN], capture_output=False)
+    log.info("=== Iniciando daily post ===")
+    daily_log = LOG_DIR / f"{datetime.now().strftime('%Y-%m-%d')}.log"
+
+    # Redireciona stdout/stderr do main.py para o log diário
+    with open(daily_log, "a", encoding="utf-8") as f:
+        result = subprocess.run(
+            [PYTHON, MAIN],
+            stdout=f,
+            stderr=f,
+            cwd=str(BASE_DIR),
+        )
+
     if result.returncode != 0:
-        log.error(f"main.py exited with code {result.returncode}")
+        log.error(f"main.py encerrou com código {result.returncode} — veja {daily_log}")
     else:
-        log.info("Daily post completed successfully")
+        log.info(f"Daily post concluído com sucesso — log em {daily_log}")
 
 
 def main():
     s = sched.scheduler(time.time, time.sleep)
 
+    log.info(f"Scheduler iniciado. Diretório: {BASE_DIR}")
+    log.info(f"Python: {PYTHON}")
+
     def schedule_next():
         run_at = _next_run_time()
         run_dt = datetime.fromtimestamp(run_at)
-        log.info(f"Next run scheduled for: {run_dt.strftime('%Y-%m-%d %H:%M:%S')}")
+        log.info(f"Próxima execução agendada: {run_dt.strftime('%Y-%m-%d %H:%M:%S')}")
         s.enterabs(run_at, 1, run_and_reschedule)
 
     def run_and_reschedule():
@@ -58,8 +79,11 @@ def main():
         schedule_next()
 
     schedule_next()
-    log.info("Scheduler running. Press Ctrl+C to stop.")
-    s.run()
+    log.info("Aguardando... (Ctrl+C para parar)")
+    try:
+        s.run()
+    except KeyboardInterrupt:
+        log.info("Scheduler encerrado pelo usuário.")
 
 
 if __name__ == "__main__":
