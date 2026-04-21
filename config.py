@@ -37,6 +37,18 @@ NEWS_KEYWORDS = [
     "generative AI ROI company",
     "LLM enterprise deployment",
     "AI workflow automation",
+    "agentic AI work",
+    "AI copilot productivity",
+    "AI tools workers employees",
+    "machine learning business impact",
+    "AI adoption company results",
+    "ChatGPT enterprise productivity",
+    "Claude AI business",
+    "AI coding developer productivity",
+    "AI professional work automation",
+    "AI transformation organization",
+    "large language model business value",
+    "AI efficiency workforce",
 ]
 
 NEWS_RSS_FEEDS = [
@@ -45,6 +57,9 @@ NEWS_RSS_FEEDS = [
     "https://www.technologyreview.com/feed/",
     "https://www.wired.com/feed/rss",
     "https://feeds.arstechnica.com/arstechnica/technology-lab",
+    "https://www.theverge.com/rss/ai-artificial-intelligence/index.xml",
+    "https://hbr.org/topics/ai/feed",
+    "https://feeds.a.dj.com/rss/RSSMarketsMain.xml",
 ]
 
 PT_NEWS_RSS_FEEDS = [

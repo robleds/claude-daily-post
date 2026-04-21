@@ -1,3 +1,4 @@
+import os
 import feedparser
 import requests
 import re
@@ -7,6 +8,60 @@ from config import NEWS_RSS_FEEDS, PT_NEWS_RSS_FEEDS, NEWS_KEYWORDS
 
 
 def fetch_recent_ai_news(max_age_days: int = 7) -> list[dict]:
+    """Fetch recent AI/productivity articles. Uses NewsAPI if key set, else RSS feeds."""
+    newsapi_key = os.environ.get("NEWSAPI_KEY")
+    if newsapi_key:
+        articles = _fetch_from_newsapi(newsapi_key, max_age_days)
+        if articles:
+            return articles
+
+    return _fetch_from_rss(max_age_days)
+
+
+def _fetch_from_newsapi(api_key: str, max_age_days: int) -> list[dict]:
+    """Fetch articles from NewsAPI.org."""
+    from_date = (datetime.now(timezone.utc) - timedelta(days=max_age_days)).strftime("%Y-%m-%d")
+    query = (
+        "(artificial intelligence OR AI OR LLM OR generative AI) AND "
+        "(productivity OR enterprise OR business OR workplace OR workforce OR ROI)"
+    )
+    try:
+        resp = requests.get(
+            "https://newsapi.org/v2/everything",
+            params={
+                "q": query,
+                "from": from_date,
+                "language": "en",
+                "sortBy": "publishedAt",
+                "pageSize": 30,
+                "apiKey": api_key,
+            },
+            timeout=15,
+        )
+        resp.raise_for_status()
+        data = resp.json()
+        articles = []
+        for item in data.get("articles", []):
+            title = item.get("title", "")
+            description = item.get("description", "") or ""
+            if not _is_ai_productivity_relevant(title, description):
+                continue
+            pub_str = item.get("publishedAt", "")
+            articles.append({
+                "title": title,
+                "url": item.get("url", ""),
+                "summary": description[:1500],
+                "source": item.get("source", {}).get("name", "NewsAPI"),
+                "published": pub_str,
+            })
+        print(f"[news_fetcher] NewsAPI: {len(articles)} relevant articles found")
+        return articles
+    except Exception as e:
+        print(f"[news_fetcher] NewsAPI error: {e} — falling back to RSS")
+        return []
+
+
+def _fetch_from_rss(max_age_days: int) -> list[dict]:
     """Fetch recent AI/productivity articles from RSS feeds."""
     cutoff = datetime.now(timezone.utc) - timedelta(days=max_age_days)
     articles = []
