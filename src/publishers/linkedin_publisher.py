@@ -24,10 +24,7 @@ class LinkedInPublisher(BasePublisher):
         }
 
     def publish(self, content: str, image_path: Path | None = None, video_path: Path | None = None) -> dict:
-        image_urn = None
-        if image_path and image_path.exists():
-            image_urn = self._upload_image(image_path)
-
+        # LinkedIn: texto puro por enquanto (sem imagem/vídeo)
         post_body = {
             "author": self.person_urn,
             "commentary": content,
@@ -40,9 +37,6 @@ class LinkedInPublisher(BasePublisher):
             "lifecycleState": "PUBLISHED",
             "isReshareDisabledByAuthor": False,
         }
-
-        if image_urn:
-            post_body["content"] = {"media": {"id": image_urn}}
 
         resp = requests.post(
             f"{self.REST_BASE}/posts",
