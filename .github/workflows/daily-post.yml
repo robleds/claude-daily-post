@@ -34,10 +34,13 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Restore YouTube token
-        if: secrets.YOUTUBE_TOKEN_B64 != ''
+        env:
+          YOUTUBE_TOKEN_B64: ${{ secrets.YOUTUBE_TOKEN_B64 }}
         run: |
-          echo "${{ secrets.YOUTUBE_TOKEN_B64 }}" | base64 -d > youtube_token.pickle
-          echo "YouTube token restaurado."
+          if [ -n "$YOUTUBE_TOKEN_B64" ]; then
+            echo "$YOUTUBE_TOKEN_B64" | base64 -d > youtube_token.pickle
+            echo "YouTube token restaurado."
+          fi
         continue-on-error: true
 
       - name: Run daily post
