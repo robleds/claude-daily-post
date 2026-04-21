@@ -1,0 +1,83 @@
+name: Daily AI Post
+
+# 9:30 UTC = 6:30 BRT (UTC-3)
+on:
+  schedule:
+    - cron: '30 9 * * *'
+  workflow_dispatch:
+    inputs:
+      use_seed:
+        description: 'Usar artigo de seed (não buscar notícia nova)?'
+        type: boolean
+        default: false
+      force_regenerate:
+        description: 'Forçar regeneração mesmo se conteúdo já existe?'
+        type: boolean
+        default: false
+
+jobs:
+  post:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Restore YouTube token
+        if: secrets.YOUTUBE_TOKEN_B64 != ''
+        run: |
+          echo "${{ secrets.YOUTUBE_TOKEN_B64 }}" | base64 -d > youtube_token.pickle
+          echo "YouTube token restaurado."
+        continue-on-error: true
+
+      - name: Run daily post
+        run: |
+          ARGS=""
+          if [ "${{ github.event.inputs.use_seed }}" = "true" ]; then
+            ARGS="$ARGS --seed"
+          fi
+          if [ "${{ github.event.inputs.force_regenerate }}" = "true" ]; then
+            ARGS="$ARGS --force"
+          fi
+          python main.py $ARGS
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          FAL_KEY: ${{ secrets.FAL_KEY }}
+          LINKEDIN_ACCESS_TOKEN: ${{ secrets.LINKEDIN_ACCESS_TOKEN }}
+          LINKEDIN_PERSON_URN: ${{ secrets.LINKEDIN_PERSON_URN }}
+          INSTAGRAM_ACCESS_TOKEN: ${{ secrets.INSTAGRAM_ACCESS_TOKEN }}
+          INSTAGRAM_ACCOUNT_ID: ${{ secrets.INSTAGRAM_ACCOUNT_ID }}
+          CLOUDINARY_URL: ${{ secrets.CLOUDINARY_URL }}
+          TIKTOK_ACCESS_TOKEN: ${{ secrets.TIKTOK_ACCESS_TOKEN }}
+          TIKTOK_OPEN_ID: ${{ secrets.TIKTOK_OPEN_ID }}
+          YOUTUBE_TOKEN_B64: ${{ secrets.YOUTUBE_TOKEN_B64 }}
+          MEDIUM_INTEGRATION_TOKEN: ${{ secrets.MEDIUM_INTEGRATION_TOKEN }}
+          DID_API_KEY: ${{ secrets.DID_API_KEY }}
+          DID_PRESENTER_IMAGE_URL: ${{ secrets.DID_PRESENTER_IMAGE_URL }}
+          NEWSAPI_KEY: ${{ secrets.NEWSAPI_KEY }}
+
+      - name: Upload output as artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: daily-post-${{ github.run_id }}
+          path: output/
+          retention-days: 30
+
+      - name: Upload logs as artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: logs-${{ github.run_id }}
+          path: logs/
+          retention-days: 30
