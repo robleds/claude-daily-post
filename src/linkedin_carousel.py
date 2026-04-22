@@ -52,25 +52,25 @@ TIPOS DE SLIDE DISPONÍVEIS:
 - closing → cta (pergunta) + handle
 
 FORMATO JSON para carousel:
-{
+{{
   "format": "carousel",
   "slides": [
-    {"type": "cover",   "headline": "...", "subtitle": "...", "source": "Fonte"},
-    {"type": "stat",    "number": "74%",  "label": "das empresas capturam menos de 30% do valor", "context": "PwC Global AI Study 2026"},
-    {"type": "insight", "title": "O diferencial não é tecnologia", "body": "Líderes automatizam decisões. Seguidores automatizam tarefas. A diferença de resultado é 7x."},
-    {"type": "list",    "title": "O que os líderes fazem diferente", "items": ["Automatizam decisões, não só processos", "Framework de IA Responsável adotado", "Confiança dos colaboradores 2x maior"]},
-    {"type": "closing", "cta": "Sua empresa está no grupo dos 20% ou dos 80%?", "handle": "@robleds"}
+    {{"type": "cover",   "headline": "...", "subtitle": "...", "source": "Fonte"}},
+    {{"type": "stat",    "number": "74%",  "label": "das empresas capturam menos de 30% do valor", "context": "PwC Global AI Study 2026"}},
+    {{"type": "insight", "title": "O diferencial não é tecnologia", "body": "Líderes automatizam decisões. Seguidores automatizam tarefas. A diferença de resultado é 7x."}},
+    {{"type": "list",    "title": "O que os líderes fazem diferente", "items": ["Automatizam decisões, não só processos", "Framework de IA Responsável adotado", "Confiança dos colaboradores 2x maior"]}},
+    {{"type": "closing", "cta": "Sua empresa está no grupo dos 20% ou dos 80%?", "handle": "@robleds"}}
   ]
-}
+}}
 
 FORMATO JSON para single:
-{
+{{
   "format": "single",
   "headline": "7x",
   "subheadline": "mais valor capturado pelos líderes em IA",
   "body": "Não é tecnologia. É estratégia de adoção.",
   "source": "PwC 2026 AI Performance Study"
-}"""
+}}"""
 
 
 # ── Public API ────────────────────────────────────────────────────────────────
