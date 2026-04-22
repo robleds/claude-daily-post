@@ -316,6 +316,6 @@ if __name__ == "__main__":
 
     if args.dry_run:
         for key in ["LINKEDIN_ACCESS_TOKEN", "INSTAGRAM_ACCESS_TOKEN", "TIKTOK_ACCESS_TOKEN", "MEDIUM_INTEGRATION_TOKEN"]:
-            os.environ.setdefault(key, "")
+            os.environ[key] = ""  # force empty even if secret is set
 
     run(seed_article=SEED_ARTICLE if args.seed else None, force_regenerate=args.force)

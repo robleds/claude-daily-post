@@ -2,6 +2,15 @@ import json
 import os
 import re
 import feedparser
+
+def _parse_json_response(raw: str) -> dict | list:
+    """Parse JSON from Claude response, handling markdown code fences."""
+    raw = re.sub(r'^```(?:json)?\s*', '', raw.strip(), flags=re.MULTILINE)
+    raw = re.sub(r'```\s*$', '', raw.strip(), flags=re.MULTILINE)
+    m = re.search(r'[\[{].+[\]}]', raw.strip(), re.DOTALL)
+    if m:
+        return json.loads(m.group())
+    return json.loads(raw.strip())
 import requests
 from datetime import datetime, timedelta, timezone, date
 from typing import Optional
@@ -237,7 +246,7 @@ Responda APENAS com JSON válido neste formato exato:
             messages=[{"role": "user", "content": prompt}],
         )
         raw = response.content[0].text.strip()
-        result = json.loads(raw)
+        result = _parse_json_response(raw)
         idx = int(result["choice"]) - 1
         selected = candidates[idx]
         selected["claude_selection_reason"] = result.get("reason", "")
@@ -471,7 +480,7 @@ Respond ONLY with valid JSON: {{"results": [{{"id": 1, "covered": true}}, {{"id"
             max_tokens=300,
             messages=[{"role": "user", "content": prompt}],
         )
-        data = json.loads(response.content[0].text.strip())
+        data = _parse_json_response(response.content[0].text)
         covered_urls: set[str] = set()
         for item in data.get("results", []):
             if item.get("covered"):

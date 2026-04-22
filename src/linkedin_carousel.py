@@ -116,7 +116,8 @@ def _generate_structure(article: dict, linkedin_post: str, api_key: str) -> dict
         messages=[{"role": "user", "content": prompt}],
     )
     raw = response.content[0].text.strip()
-
+    raw = re.sub(r'^```(?:json)?\s*', '', raw, flags=re.MULTILINE)
+    raw = re.sub(r'```\s*$', '', raw.strip(), flags=re.MULTILINE)
     json_match = re.search(r'\{.+\}', raw, re.DOTALL)
     if not json_match:
         raise ValueError(f"Claude returned no valid JSON: {raw[:200]}")
