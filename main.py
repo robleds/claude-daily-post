@@ -26,10 +26,14 @@ load_dotenv()
 BASE_DIR = Path(__file__).parent
 sys.path.insert(0, str(BASE_DIR / "src"))
 
-from config import OUTPUT_DIR
-from src.news_fetcher import fetch_recent_ai_news, filter_not_in_portuguese, pick_best_article, fetch_full_content
+from config import OUTPUT_DIR, ACTIVE_PLATFORMS
+from src.news_fetcher import (
+    fetch_recent_ai_news, filter_not_in_portuguese, filter_not_recently_published,
+    pick_best_article, select_with_claude, fetch_full_content,
+)
 from src.content_generator import generate_all_content
 from src.image_generator import generate_images
+from src.linkedin_carousel import build_linkedin_visual
 from src.video_generator import generate_video
 from src.publishers.linkedin_publisher import LinkedInPublisher
 from src.publishers.instagram_publisher import InstagramPublisher
@@ -48,9 +52,9 @@ PLATFORMS = ["linkedin", "instagram", "tiktok", "youtube", "medium"]
 
 
 def _load_existing_content(output_dir: Path) -> dict | None:
-    """Load already-generated content from disk if it exists."""
-    content = {}
-    for platform in PLATFORMS:
+    """Load already-generated content from disk if it exists (active platforms only)."""
+    content = {p: "" for p in PLATFORMS}
+    for platform in ACTIVE_PLATFORMS:
         f = output_dir / f"{platform}.txt"
         if not f.exists():
             return None
@@ -124,9 +128,11 @@ def run(seed_article: dict | None = None, force_regenerate: bool = False):
             log.info("Buscando notícias recentes de IA...")
             articles = fetch_recent_ai_news(max_age_days=7)
             log.info(f"Encontrados {len(articles)} artigos relevantes")
-            fresh = filter_not_in_portuguese(articles)
-            log.info(f"Ainda não em português: {len(fresh)} artigos")
-            article = pick_best_article(fresh) or pick_best_article(articles)
+            api_key = os.getenv("ANTHROPIC_API_KEY", "")
+            fresh = filter_not_in_portuguese(articles, api_key)
+            fresh = filter_not_recently_published(fresh)
+            log.info(f"Candidatos após filtros: {len(fresh)} artigos")
+            article = select_with_claude(fresh, api_key) or pick_best_article(articles)
             if not article:
                 log.error("Nenhum artigo encontrado. Abortando.")
                 return
@@ -140,27 +146,48 @@ def run(seed_article: dict | None = None, force_regenerate: bool = False):
             json.dumps(article, ensure_ascii=False, indent=2), encoding="utf-8"
         )
 
-        # 3. Gerar conteúdo via Claude
-        log.info("Gerando conteúdo por plataforma via Claude...")
+        # 3. Gerar conteúdo via Claude (só plataformas ativas)
+        log.info(f"Gerando conteúdo para: {', '.join(ACTIVE_PLATFORMS)}")
         content = generate_all_content(article)
 
-        for platform in PLATFORMS:
-            (output_dir / f"{platform}.txt").write_text(content[platform], encoding="utf-8")
-            log.info(f"[{platform}] Conteúdo salvo")
+        for platform in ACTIVE_PLATFORMS:
+            text = content.get(platform, "")
+            if text:
+                (output_dir / f"{platform}.txt").write_text(text, encoding="utf-8")
+                log.info(f"[{platform}] Conteúdo salvo")
 
         (output_dir / "videos").mkdir(exist_ok=True)
-        (output_dir / "videos" / "video_script.txt").write_text(content["video_script"], encoding="utf-8")
+        if content.get("video_script"):
+            (output_dir / "videos" / "video_script.txt").write_text(
+                content["video_script"], encoding="utf-8"
+            )
 
-        # 4. Gerar imagens
-        log.info("Gerando imagens...")
-        image_results = generate_images(content["image_concept"], output_dir)
-        (output_dir / "image_results.json").write_text(
-            json.dumps(image_results, ensure_ascii=False, indent=2), encoding="utf-8"
-        )
+        # 4a. Gerar carrossel LinkedIn (PDF)
+        if "linkedin" in ACTIVE_PLATFORMS and content.get("linkedin"):
+            log.info("Gerando carrossel LinkedIn...")
+            images_dir = output_dir / "images"
+            carousel_path = build_linkedin_visual(
+                article=article,
+                linkedin_post=content["linkedin"],
+                api_key=api_key,
+                output_dir=images_dir,
+            )
+            if carousel_path:
+                log.info(f"[linkedin] Carrossel salvo: {carousel_path.name}")
+                content["linkedin_carousel"] = str(carousel_path)
 
-        # 5. Gerar vídeo
-        log.info("Gerando vídeo...")
-        generate_video(content["video_script"], output_dir)
+        # 4b. Gerar imagens para outras plataformas (fal.ai)
+        if content.get("image_concept"):
+            log.info("Gerando imagens...")
+            image_results = generate_images(content["image_concept"], output_dir)
+            (output_dir / "image_results.json").write_text(
+                json.dumps(image_results, ensure_ascii=False, indent=2), encoding="utf-8"
+            )
+
+        # 5. Gerar vídeo (só se plataformas de vídeo ativas)
+        if any(p in ACTIVE_PLATFORMS for p in ("youtube", "tiktok")):
+            log.info("Gerando vídeo...")
+            generate_video(content.get("video_script", ""), output_dir)
 
     # --- PUBLICAÇÃO ---
     previous_results = _load_previous_publish_results(output_dir)
@@ -198,8 +225,15 @@ def run(seed_article: dict | None = None, force_regenerate: bool = False):
 
 
 def _find_image(output_dir: Path, platform: str) -> Path | None:
+    # LinkedIn: prefer carousel PDF, fallback to single infographic
+    if platform == "linkedin":
+        for name in ("linkedin_carousel.pdf", "linkedin_single.pdf"):
+            p = output_dir / "images" / name
+            if p.exists():
+                return p
+        return None
+
     img_map = {
-        "linkedin":  "linkedin.png",
         "instagram": "instagram.png",
         "tiktok":    "tiktok.png",
         "youtube":   "youtube_thumbnail.png",

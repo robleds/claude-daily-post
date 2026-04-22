@@ -1,0 +1,175 @@
+name: Daily AI Post
+
+on:
+  schedule:
+    - cron: '30 9 * * *'   # 06:30 BRT (UTC-3) — dias úteis e fins de semana
+
+  workflow_dispatch:        # disparo manual via GitHub UI ou API
+    inputs:
+      dry_run:
+        description: 'Gerar conteúdo sem publicar'
+        type: boolean
+        default: false
+      seed:
+        description: 'Usar artigo seed (PwC study)'
+        type: boolean
+        default: false
+      force:
+        description: 'Forçar regeneração mesmo se já existe conteúdo hoje'
+        type: boolean
+        default: false
+
+jobs:
+  post:
+    name: Gerar e publicar post diário
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    # ── Segredos e variáveis de ambiente ──────────────────────────────────────
+    # Secrets (criptografados): Settings → Secrets and variables → Actions → Secrets
+    # Variables (texto plano):  Settings → Secrets and variables → Actions → Variables
+    env:
+      # Força Node.js 24 nos actions (evita warning de deprecação — obrigatório a partir de junho/2026)
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+      # Obrigatório
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+
+      # Controle de plataformas — configure como Variable, não Secret
+      # Valor padrão: linkedin. Para ativar mais: linkedin,instagram,medium
+      ACTIVE_PLATFORMS: ${{ vars.ACTIVE_PLATFORMS || 'linkedin' }}
+
+      # Geração de imagens (fal.ai) — usado quando ACTIVE_PLATFORMS inclui instagram/tiktok/youtube/medium
+      FAL_KEY: ${{ secrets.FAL_KEY }}
+
+      # LinkedIn
+      LINKEDIN_CLIENT_ID:     ${{ secrets.LINKEDIN_CLIENT_ID }}
+      LINKEDIN_CLIENT_SECRET: ${{ secrets.LINKEDIN_CLIENT_SECRET }}
+      LINKEDIN_ACCESS_TOKEN:  ${{ secrets.LINKEDIN_ACCESS_TOKEN }}
+      LINKEDIN_PERSON_URN:    ${{ secrets.LINKEDIN_PERSON_URN }}
+
+      # Instagram (via Facebook Graph API) — ativar quando ACTIVE_PLATFORMS incluir instagram
+      INSTAGRAM_ACCESS_TOKEN: ${{ secrets.INSTAGRAM_ACCESS_TOKEN }}
+      INSTAGRAM_ACCOUNT_ID:   ${{ secrets.INSTAGRAM_ACCOUNT_ID }}
+
+      # TikTok — ativar quando ACTIVE_PLATFORMS incluir tiktok
+      TIKTOK_ACCESS_TOKEN: ${{ secrets.TIKTOK_ACCESS_TOKEN }}
+      TIKTOK_OPEN_ID:      ${{ secrets.TIKTOK_OPEN_ID }}
+
+      # YouTube — ativar quando ACTIVE_PLATFORMS incluir youtube
+      # Armazene o conteúdo do credentials.json como secret YOUTUBE_CREDENTIALS_JSON
+      YOUTUBE_CREDENTIALS_FILE: youtube_credentials.json
+
+      # Medium — ativar quando ACTIVE_PLATFORMS incluir medium
+      MEDIUM_INTEGRATION_TOKEN: ${{ secrets.MEDIUM_INTEGRATION_TOKEN }}
+
+      # D-ID — geração de vídeo (opcional)
+      DID_API_KEY:              ${{ secrets.DID_API_KEY }}
+      DID_PRESENTER_IMAGE_URL:  ${{ secrets.DID_PRESENTER_IMAGE_URL }}
+
+    steps:
+      # ── 1. Código ────────────────────────────────────────────────────────────
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # ── 2. Python ────────────────────────────────────────────────────────────
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      # ── 3. Cache do output (histórico para dedup de tópicos) ─────────────────
+      # Restaura o output/ dos últimos dias para que filter_not_recently_published
+      # funcione corretamente — sem isso, o mesmo tópico poderia ser publicado
+      # em dias consecutivos.
+      - name: Restaurar cache de output
+        uses: actions/cache@v4
+        with:
+          path: output/
+          key: output-${{ runner.os }}-${{ github.run_id }}
+          restore-keys: |
+            output-${{ runner.os }}-
+
+      # ── 4. Dependências de sistema (weasyprint → PDF do carrossel) ───────────
+      - name: Instalar dependências de sistema (weasyprint)
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y \
+            libpango-1.0-0 \
+            libpangocairo-1.0-0 \
+            libcairo2 \
+            libgdk-pixbuf2.0-0 \
+            libfontconfig1 \
+            shared-mime-info
+
+      # ── 5. Dependências Python ───────────────────────────────────────────────
+      - name: Instalar dependências Python
+        run: pip install -r requirements.txt
+
+      # ── 6. Credenciais YouTube (arquivo JSON) ────────────────────────────────
+      # Armazene o conteúdo do credentials.json como secret YOUTUBE_CREDENTIALS_JSON
+      - name: Escrever credenciais YouTube
+        if: ${{ secrets.YOUTUBE_CREDENTIALS_JSON != '' }}
+        env:
+          YOUTUBE_CREDENTIALS_JSON: ${{ secrets.YOUTUBE_CREDENTIALS_JSON }}
+        run: echo "$YOUTUBE_CREDENTIALS_JSON" > youtube_credentials.json
+
+      # ── 7. Executar pipeline ─────────────────────────────────────────────────
+      - name: Executar daily post
+        run: |
+          ARGS=""
+          [ "$DRY_RUN" = "true" ]  && ARGS="$ARGS --dry-run"
+          [ "$USE_SEED" = "true" ] && ARGS="$ARGS --seed"
+          [ "$FORCE" = "true" ]    && ARGS="$ARGS --force"
+          python main.py $ARGS
+        env:
+          DRY_RUN:  ${{ inputs.dry_run  || 'false' }}
+          USE_SEED: ${{ inputs.seed     || 'false' }}
+          FORCE:    ${{ inputs.force    || 'false' }}
+
+      # ── 8. Salvar output como artefato (inspeção manual) ─────────────────────
+      - name: Upload artefatos do dia
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: output-${{ github.run_id }}-${{ github.run_attempt }}
+          path: output/
+          retention-days: 30
+
+      # ── 9. Resumo no GitHub Actions ──────────────────────────────────────────
+      - name: Resumo da execução
+        if: always()
+        run: |
+          TODAY=$(date +%Y-%m-%d)
+          echo "## Daily Post — $TODAY" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          ARTICLE_FILE="output/$TODAY/source_article.json"
+          if [ -f "$ARTICLE_FILE" ]; then
+            TITLE=$(python3 -c "import json; d=json.load(open('$ARTICLE_FILE')); print(d.get('title','?'))")
+            SOURCE=$(python3 -c "import json; d=json.load(open('$ARTICLE_FILE')); print(d.get('source','?'))")
+            echo "**Notícia:** $TITLE" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "**Fonte:** $SOURCE" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "> Nenhuma notícia encontrada ou execução em dry-run." >> $GITHUB_STEP_SUMMARY
+          fi
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Plataformas ativas:** \`$ACTIVE_PLATFORMS\`" >> $GITHUB_STEP_SUMMARY
+
+          RESULTS_FILE="output/$TODAY/publish_results.json"
+          if [ -f "$RESULTS_FILE" ]; then
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "**Resultados:**" >> $GITHUB_STEP_SUMMARY
+            python3 -c "
+          import json
+          data = json.load(open('$RESULTS_FILE'))
+          for p, r in data.items():
+              status = r.get('status', 'pending')
+              icon = '✅' if status == 'published' else '⏭️' if status == 'skipped' else '❌'
+              detail = r.get('url') or r.get('post_id') or r.get('reason','')
+              print(f'- {icon} **{p}**: {status} {detail}')
+          " >> $GITHUB_STEP_SUMMARY 2>/dev/null || true
+          fi
