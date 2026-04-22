@@ -123,12 +123,16 @@ def generate_linkedin(context: str) -> str:
 Escreva um post para LinkedIn na minha voz.
 
 ESTRUTURA:
-- Começa direto no primeiro parágrafo, sem linha-título separada
 - 3 a 4 parágrafos curtos (2 a 4 linhas cada)
-- Primeiro parágrafo já prende a atenção com dado ou situação concreta
+- Primeiro parágrafo: começa com dado concreto ou situação real — 2 a 4 linhas
 - Pergunta final que provoque resposta genuína
 - Linha em branco
 - 5 a 7 hashtags
+
+PROIBIDO:
+- NÃO escreva uma frase curta isolada antes do primeiro parágrafo
+- NÃO crie linha de título, headline ou hook separado
+- O post começa DIRETAMENTE na primeira linha do primeiro parágrafo, sem nenhuma linha anterior
 
 {_STYLE_RULES}
 - Sem emojis

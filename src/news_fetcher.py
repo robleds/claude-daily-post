@@ -496,9 +496,9 @@ Respond ONLY with valid JSON: {{"results": [{{"id": 1, "covered": true}}, {{"id"
 # ── Published history deduplication ──────────────────────────────────────────
 
 def _get_recent_published_titles(days: int) -> list[str]:
-    """Read source_article.json from the last N days of output."""
+    """Read source_article.json from today + last N days of output."""
     titles = []
-    for i in range(1, days + 1):
+    for i in range(0, days + 1):  # day 0 = today, avoids repeating same topic on force re-runs
         day = (date.today() - timedelta(days=i)).strftime("%Y-%m-%d")
         article_file = OUTPUT_DIR / day / "source_article.json"
         if article_file.exists():
