@@ -1,7 +1,16 @@
+import os
 from pathlib import Path
 
 BASE_DIR = Path(__file__).parent
 OUTPUT_DIR = BASE_DIR / "output"
+
+# Controla quais plataformas geram conteúdo e publicam.
+# Configure via .env: ACTIVE_PLATFORMS=linkedin,instagram,medium
+ACTIVE_PLATFORMS: list[str] = [
+    p.strip()
+    for p in os.getenv("ACTIVE_PLATFORMS", "linkedin").split(",")
+    if p.strip()
+]
 
 RODRIGO_PERSONA = """
 Você é Rodrigo Robledo (@robleds), fundador da DoctorWeb, consultor GovTech na EloGroup e Angel Advisor na PUC Angels.
@@ -37,6 +46,10 @@ NEWS_KEYWORDS = [
     "generative AI ROI company",
     "LLM enterprise deployment",
     "AI workflow automation",
+    "AI research study findings",
+    "machine learning breakthrough",
+    "AI regulation policy",
+    "AI adoption workforce",
     "agentic AI work",
     "AI copilot productivity",
     "AI tools workers employees",
@@ -51,21 +64,78 @@ NEWS_KEYWORDS = [
     "AI efficiency workforce",
 ]
 
+# Tier hierarchy:
+#   1 = Strategic / research (think tanks, labs, top consulting) — highest authority
+#   2 = Top tech media (broad reach + editorial rigor)
+#   3 = Credible specialist media
+#   4 = Regional / emerging market
 NEWS_RSS_FEEDS = [
-    "https://techcrunch.com/feed/",
-    "https://feeds.feedburner.com/venturebeat/SZYF",
-    "https://www.technologyreview.com/feed/",
-    "https://www.wired.com/feed/rss",
-    "https://feeds.arstechnica.com/arstechnica/technology-lab",
-    "https://www.theverge.com/rss/ai-artificial-intelligence/index.xml",
-    "https://hbr.org/topics/ai/feed",
-    "https://feeds.a.dj.com/rss/RSSMarketsMain.xml",
+    # ── Tier 1: Strategic & Research ─────────────────────────────────────────
+    {"url": "https://sloanreview.mit.edu/feed/",                         "tier": 1, "region": "US"},
+    {"url": "https://hai.stanford.edu/news/feed/",                       "tier": 1, "region": "US"},
+    {"url": "https://www.weforum.org/rss.xml",                           "tier": 1, "region": "EU"},
+    {"url": "https://openai.com/blog/rss.xml",                           "tier": 1, "region": "US"},
+    {"url": "https://www.anthropic.com/rss.xml",                         "tier": 1, "region": "US"},
+    {"url": "https://blog.google/technology/ai/rss/",                    "tier": 1, "region": "US"},
+    {"url": "https://hbr.org/topics/ai/feed",                            "tier": 1, "region": "US"},
+    # ── Tier 2: Top Tech Media ────────────────────────────────────────────────
+    {"url": "https://techcrunch.com/feed/",                              "tier": 2, "region": "US"},
+    {"url": "https://feeds.feedburner.com/venturebeat/SZYF",            "tier": 2, "region": "US"},
+    {"url": "https://www.technologyreview.com/feed/",                    "tier": 2, "region": "US"},
+    {"url": "https://www.wired.com/feed/rss",                           "tier": 2, "region": "US"},
+    {"url": "https://feeds.arstechnica.com/arstechnica/technology-lab", "tier": 2, "region": "US"},
+    {"url": "https://www.theverge.com/rss/index.xml",                   "tier": 2, "region": "US"},
+    {"url": "https://www.cnbc.com/id/19854910/device/rss/rss.html",     "tier": 2, "region": "US"},
+    # ── Tier 3: Specialist Media ──────────────────────────────────────────────
+    {"url": "https://www.fastcompany.com/technology/rss",               "tier": 3, "region": "US"},
+    {"url": "https://thenextweb.com/feed/",                             "tier": 3, "region": "EU"},
+    {"url": "https://www.euractiv.com/section/digital/feed/",           "tier": 3, "region": "EU"},
+    {"url": "https://www.zdnet.com/news/rss.xml",                       "tier": 3, "region": "US"},
+    # ── Tier 4: Regional ──────────────────────────────────────────────────────
+    {"url": "https://asia.nikkei.com/rss/feed/nar",                     "tier": 4, "region": "ASIA"},
+    {"url": "https://www.techinasia.com/feed",                          "tier": 4, "region": "ASIA"},
+    {"url": "https://analyticsindiamag.com/feed/",                      "tier": 4, "region": "IN"},
+    {"url": "https://inc42.com/feed/",                                  "tier": 4, "region": "IN"},
+    {"url": "https://economictimes.indiatimes.com/tech/rss.cms",        "tier": 4, "region": "IN"},
 ]
 
 PT_NEWS_RSS_FEEDS = [
+    # Consumer tech
     "https://canaltech.com.br/rss/",
     "https://www.tecmundo.com.br/rss",
     "https://olhardigital.com.br/feed/",
+    # Executivo / negócios
+    "https://exame.com/feed/",
+    "https://computerworld.com.br/feed/",
+    "https://www.infomoney.com.br/feed/",
+    "https://mittechreview.com.br/feed/",
+    "https://b9.com.br/feed/",
+]
+
+# Sinais executivos — vocabulário de C-suite e líderes empresariais
+EXECUTIVE_SIGNAL_KEYWORDS = [
+    # Impacto estratégico
+    "ceo", "c-suite", "executive", "board", "strategy", "strategic",
+    "fortune 500", "industry", "sector", "competitive advantage",
+    # Dados e pesquisa (credibilidade)
+    "study", "research", "survey", "report", "data", "percent", "%",
+    "billion", "million", "roi", "revenue", "profit", "cost reduction",
+    # Regulação e governança (pauta executiva)
+    "regulation", "policy", "governance", "compliance", "framework",
+    "eu ai act", "responsible ai", "ethics",
+    # Força de trabalho e produtividade
+    "workforce", "employees", "jobs", "productivity", "efficiency",
+    "automation", "deployment", "adoption", "transformation",
+    # Sinais de inovação (apropriados para executivos)
+    "breakthrough", "new research", "announces", "launches", "first",
+]
+
+# Valor de insight e produtividade no corpo do artigo
+INSIGHT_KEYWORDS = [
+    "productivity", "workflow", "efficiency", "saves time", "automates",
+    "enterprise", "business", "workplace", "workforce", "teams", "employees",
+    "roi", "revenue", "profit", "cost", "strategy", "competitive advantage",
+    "implementation", "deployment", "adoption",
 ]
 
 PLATFORMS = ["linkedin", "instagram", "tiktok", "youtube", "medium"]
