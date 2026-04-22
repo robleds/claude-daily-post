@@ -50,6 +50,18 @@ NEWS_KEYWORDS = [
     "machine learning breakthrough",
     "AI regulation policy",
     "AI adoption workforce",
+    "agentic AI work",
+    "AI copilot productivity",
+    "AI tools workers employees",
+    "machine learning business impact",
+    "AI adoption company results",
+    "ChatGPT enterprise productivity",
+    "Claude AI business",
+    "AI coding developer productivity",
+    "AI professional work automation",
+    "AI transformation organization",
+    "large language model business value",
+    "AI efficiency workforce",
 ]
 
 # Tier hierarchy:
@@ -61,32 +73,30 @@ NEWS_RSS_FEEDS = [
     # ── Tier 1: Strategic & Research ─────────────────────────────────────────
     {"url": "https://sloanreview.mit.edu/feed/",                         "tier": 1, "region": "US"},
     {"url": "https://hai.stanford.edu/news/feed/",                       "tier": 1, "region": "US"},
-    {"url": "https://www.weforum.org/rss.xml",                          "tier": 1, "region": "EU"},
-    {"url": "https://openai.com/blog/rss.xml",                          "tier": 1, "region": "US"},
-    {"url": "https://www.anthropic.com/rss.xml",                        "tier": 1, "region": "US"},
-    {"url": "https://blog.google/technology/ai/rss/",                   "tier": 1, "region": "US"},
+    {"url": "https://www.weforum.org/rss.xml",                           "tier": 1, "region": "EU"},
+    {"url": "https://openai.com/blog/rss.xml",                           "tier": 1, "region": "US"},
+    {"url": "https://www.anthropic.com/rss.xml",                         "tier": 1, "region": "US"},
+    {"url": "https://blog.google/technology/ai/rss/",                    "tier": 1, "region": "US"},
+    {"url": "https://hbr.org/topics/ai/feed",                            "tier": 1, "region": "US"},
     # ── Tier 2: Top Tech Media ────────────────────────────────────────────────
-    {"url": "https://techcrunch.com/feed/",                             "tier": 2, "region": "US"},
-    {"url": "https://feeds.feedburner.com/venturebeat/SZYF",           "tier": 2, "region": "US"},
-    {"url": "https://www.technologyreview.com/feed/",                   "tier": 2, "region": "US"},
-    {"url": "https://www.wired.com/feed/rss",                          "tier": 2, "region": "US"},
-    {"url": "https://feeds.arstechnica.com/arstechnica/technology-lab","tier": 2, "region": "US"},
-    {"url": "https://www.theverge.com/rss/index.xml",                  "tier": 2, "region": "US"},
-    {"url": "https://www.cnbc.com/id/19854910/device/rss/rss.html",    "tier": 2, "region": "US"},
+    {"url": "https://techcrunch.com/feed/",                              "tier": 2, "region": "US"},
+    {"url": "https://feeds.feedburner.com/venturebeat/SZYF",            "tier": 2, "region": "US"},
+    {"url": "https://www.technologyreview.com/feed/",                    "tier": 2, "region": "US"},
+    {"url": "https://www.wired.com/feed/rss",                           "tier": 2, "region": "US"},
+    {"url": "https://feeds.arstechnica.com/arstechnica/technology-lab", "tier": 2, "region": "US"},
+    {"url": "https://www.theverge.com/rss/index.xml",                   "tier": 2, "region": "US"},
+    {"url": "https://www.cnbc.com/id/19854910/device/rss/rss.html",     "tier": 2, "region": "US"},
     # ── Tier 3: Specialist Media ──────────────────────────────────────────────
-    {"url": "https://www.fastcompany.com/technology/rss",              "tier": 3, "region": "US"},
-    # Europa — França e Alemanha via cobertura em inglês
-    {"url": "https://thenextweb.com/feed/",                            "tier": 3, "region": "EU"},
-    {"url": "https://www.euractiv.com/section/digital/feed/",          "tier": 3, "region": "EU"},
-    {"url": "https://www.zdnet.com/news/rss.xml",                      "tier": 3, "region": "EU"},
+    {"url": "https://www.fastcompany.com/technology/rss",               "tier": 3, "region": "US"},
+    {"url": "https://thenextweb.com/feed/",                             "tier": 3, "region": "EU"},
+    {"url": "https://www.euractiv.com/section/digital/feed/",           "tier": 3, "region": "EU"},
+    {"url": "https://www.zdnet.com/news/rss.xml",                       "tier": 3, "region": "US"},
     # ── Tier 4: Regional ──────────────────────────────────────────────────────
-    # Ásia — Japão e Sudeste Asiático
-    {"url": "https://asia.nikkei.com/rss/feed/nar",                    "tier": 4, "region": "ASIA"},
-    {"url": "https://www.techinasia.com/feed",                         "tier": 4, "region": "ASIA"},
-    # Índia
-    {"url": "https://analyticsindiamag.com/feed/",                     "tier": 4, "region": "IN"},
-    {"url": "https://inc42.com/feed/",                                 "tier": 4, "region": "IN"},
-    {"url": "https://economictimes.indiatimes.com/tech/rss.cms",       "tier": 4, "region": "IN"},
+    {"url": "https://asia.nikkei.com/rss/feed/nar",                     "tier": 4, "region": "ASIA"},
+    {"url": "https://www.techinasia.com/feed",                          "tier": 4, "region": "ASIA"},
+    {"url": "https://analyticsindiamag.com/feed/",                      "tier": 4, "region": "IN"},
+    {"url": "https://inc42.com/feed/",                                  "tier": 4, "region": "IN"},
+    {"url": "https://economictimes.indiatimes.com/tech/rss.cms",        "tier": 4, "region": "IN"},
 ]
 
 PT_NEWS_RSS_FEEDS = [

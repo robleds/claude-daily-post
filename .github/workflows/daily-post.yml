@@ -25,9 +25,6 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
-    # ── Segredos e variáveis de ambiente ──────────────────────────────────────
-    # Secrets (criptografados): Settings → Secrets and variables → Actions → Secrets
-    # Variables (texto plano):  Settings → Secrets and variables → Actions → Variables
     env:
       # Força Node.js 24 nos actions (evita warning de deprecação — obrigatório a partir de junho/2026)
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
@@ -48,24 +45,26 @@ jobs:
       LINKEDIN_ACCESS_TOKEN:  ${{ secrets.LINKEDIN_ACCESS_TOKEN }}
       LINKEDIN_PERSON_URN:    ${{ secrets.LINKEDIN_PERSON_URN }}
 
-      # Instagram (via Facebook Graph API) — ativar quando ACTIVE_PLATFORMS incluir instagram
+      # Instagram (via Facebook Graph API)
       INSTAGRAM_ACCESS_TOKEN: ${{ secrets.INSTAGRAM_ACCESS_TOKEN }}
       INSTAGRAM_ACCOUNT_ID:   ${{ secrets.INSTAGRAM_ACCOUNT_ID }}
 
-      # TikTok — ativar quando ACTIVE_PLATFORMS incluir tiktok
+      # TikTok
       TIKTOK_ACCESS_TOKEN: ${{ secrets.TIKTOK_ACCESS_TOKEN }}
       TIKTOK_OPEN_ID:      ${{ secrets.TIKTOK_OPEN_ID }}
 
-      # YouTube — ativar quando ACTIVE_PLATFORMS incluir youtube
-      # Armazene o conteúdo do credentials.json como secret YOUTUBE_CREDENTIALS_JSON
+      # YouTube — armazene o conteúdo do credentials.json como secret YOUTUBE_CREDENTIALS_JSON
       YOUTUBE_CREDENTIALS_FILE: youtube_credentials.json
 
-      # Medium — ativar quando ACTIVE_PLATFORMS incluir medium
+      # Medium
       MEDIUM_INTEGRATION_TOKEN: ${{ secrets.MEDIUM_INTEGRATION_TOKEN }}
 
       # D-ID — geração de vídeo (opcional)
       DID_API_KEY:              ${{ secrets.DID_API_KEY }}
       DID_PRESENTER_IMAGE_URL:  ${{ secrets.DID_PRESENTER_IMAGE_URL }}
+
+      # NewsAPI (opcional — enriquece busca de notícias)
+      NEWSAPI_KEY: ${{ secrets.NEWSAPI_KEY }}
 
     steps:
       # ── 1. Código ────────────────────────────────────────────────────────────
@@ -80,9 +79,6 @@ jobs:
           cache: 'pip'
 
       # ── 3. Cache do output (histórico para dedup de tópicos) ─────────────────
-      # Restaura o output/ dos últimos dias para que filter_not_recently_published
-      # funcione corretamente — sem isso, o mesmo tópico poderia ser publicado
-      # em dias consecutivos.
       - name: Restaurar cache de output
         uses: actions/cache@v4
         with:
@@ -108,7 +104,6 @@ jobs:
         run: pip install -r requirements.txt
 
       # ── 6. Credenciais YouTube (arquivo JSON) ────────────────────────────────
-      # Armazene o conteúdo do credentials.json como secret YOUTUBE_CREDENTIALS_JSON
       - name: Escrever credenciais YouTube
         if: ${{ secrets.YOUTUBE_CREDENTIALS_JSON != '' }}
         env:
@@ -137,7 +132,16 @@ jobs:
           path: output/
           retention-days: 30
 
-      # ── 9. Resumo no GitHub Actions ──────────────────────────────────────────
+      # ── 9. Salvar logs como artefato ─────────────────────────────────────────
+      - name: Upload logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: logs-${{ github.run_id }}-${{ github.run_attempt }}
+          path: logs/
+          retention-days: 30
+
+      # ── 10. Resumo no GitHub Actions ─────────────────────────────────────────
       - name: Resumo da execução
         if: always()
         run: |
