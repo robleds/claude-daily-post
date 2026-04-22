@@ -105,10 +105,12 @@ jobs:
 
       # ── 6. Credenciais YouTube (arquivo JSON) ────────────────────────────────
       - name: Escrever credenciais YouTube
-        if: ${{ secrets.YOUTUBE_CREDENTIALS_JSON != '' }}
         env:
           YOUTUBE_CREDENTIALS_JSON: ${{ secrets.YOUTUBE_CREDENTIALS_JSON }}
-        run: echo "$YOUTUBE_CREDENTIALS_JSON" > youtube_credentials.json
+        run: |
+          if [ -n "$YOUTUBE_CREDENTIALS_JSON" ]; then
+            echo "$YOUTUBE_CREDENTIALS_JSON" > youtube_credentials.json
+          fi
 
       # ── 7. Executar pipeline ─────────────────────────────────────────────────
       - name: Executar daily post
