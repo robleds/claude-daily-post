@@ -125,7 +125,7 @@ def _platforms_needing_publish(previous: dict) -> list[str]:
     return pending
 
 
-def run(seed_article: dict | None = None, force_regenerate: bool = False):
+def run(seed_article: dict | None = None, force_regenerate: bool = False, force_publish: bool = False):
     today = datetime.now().strftime("%Y-%m-%d")
     output_dir = OUTPUT_DIR / today
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -210,7 +210,7 @@ def run(seed_article: dict | None = None, force_regenerate: bool = False):
             generate_video(content.get("video_script", ""), output_dir)
 
     # --- PUBLICAÇÃO ---
-    previous_results = _load_previous_publish_results(output_dir)
+    previous_results = {} if force_publish else _load_previous_publish_results(output_dir)
     pending_platforms = _platforms_needing_publish(previous_results)
 
     if not pending_platforms:
@@ -312,10 +312,15 @@ if __name__ == "__main__":
     parser.add_argument("--seed", action="store_true", help="Usar seed article do dia (PwC study)")
     parser.add_argument("--dry-run", action="store_true", help="Gerar conteúdo sem publicar")
     parser.add_argument("--force", action="store_true", help="Forçar regeneração mesmo se conteúdo já existe")
+    parser.add_argument("--force-publish", action="store_true", help="Publicar mesmo que já tenha sido publicado hoje")
     args = parser.parse_args()
 
     if args.dry_run:
         for key in ["LINKEDIN_ACCESS_TOKEN", "INSTAGRAM_ACCESS_TOKEN", "TIKTOK_ACCESS_TOKEN", "MEDIUM_INTEGRATION_TOKEN"]:
             os.environ[key] = ""  # force empty even if secret is set
 
-    run(seed_article=SEED_ARTICLE if args.seed else None, force_regenerate=args.force)
+    run(
+        seed_article=SEED_ARTICLE if args.seed else None,
+        force_regenerate=args.force,
+        force_publish=args.force_publish,
+    )

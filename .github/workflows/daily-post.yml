@@ -18,6 +18,10 @@ on:
         description: 'Forçar regeneração mesmo se já existe conteúdo hoje'
         type: boolean
         default: false
+      force_publish:
+        description: 'Publicar mesmo que já tenha sido publicado hoje'
+        type: boolean
+        default: false
 
 jobs:
   post:
@@ -116,14 +120,16 @@ jobs:
       - name: Executar daily post
         run: |
           ARGS=""
-          [ "$DRY_RUN" = "true" ]  && ARGS="$ARGS --dry-run"
-          [ "$USE_SEED" = "true" ] && ARGS="$ARGS --seed"
-          [ "$FORCE" = "true" ]    && ARGS="$ARGS --force"
+          [ "$DRY_RUN" = "true" ]       && ARGS="$ARGS --dry-run"
+          [ "$USE_SEED" = "true" ]      && ARGS="$ARGS --seed"
+          [ "$FORCE" = "true" ]         && ARGS="$ARGS --force"
+          [ "$FORCE_PUBLISH" = "true" ] && ARGS="$ARGS --force-publish"
           python main.py $ARGS
         env:
-          DRY_RUN:  ${{ inputs.dry_run  || 'false' }}
-          USE_SEED: ${{ inputs.seed     || 'false' }}
-          FORCE:    ${{ inputs.force    || 'false' }}
+          DRY_RUN:       ${{ inputs.dry_run       || 'false' }}
+          USE_SEED:      ${{ inputs.seed           || 'false' }}
+          FORCE:         ${{ inputs.force          || 'false' }}
+          FORCE_PUBLISH: ${{ inputs.force_publish  || 'false' }}
 
       # ── 8. Salvar output como artefato (inspeção manual) ─────────────────────
       - name: Upload artefatos do dia
